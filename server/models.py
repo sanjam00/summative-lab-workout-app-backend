@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import validates, ValidationError, validates_schema
-from marshmallow import Schema, fields, validates_schema
+# from sqlalchemy.orm import validates, ValidationError, validates_schema
+from marshmallow import Schema, fields, validates_schema, validates, ValidationError
 db = SQLAlchemy()
 
 # Define models here
@@ -32,7 +32,7 @@ class Workout(db.Model):
   duration_minutes = db.Column(db.Integer)
   notes = db.Column(db.Text)
 
-  workout_exercises = db.relationship('WorkoutExercises', back_populates='workout')
+  workout_exercises = db.relationship('WorkoutExercises', back_populates='workout', cascade='all, delete-orphan')
 
   # workout duration must be positive
   __table_args__ = (
@@ -128,6 +128,7 @@ class WorkoutExercisesSchema(Schema):
   exercise = fields.Nested(lambda: ExerciseSchema(exclude=("workout_exercises",)))
   workout = fields.Nested(lambda: WorkoutSchema(exclude=("workout_exercises",)))
 
+  # ensures at least one of reps, sets, and duration_seconds
   @validates_schema
   def validate_at_least_one_metric(self, data, **kwargs):
     if not data.get("reps") and not data.get("sets") and not data.get("duration_seconds"):
