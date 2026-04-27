@@ -34,6 +34,7 @@ pip install flask flask-sqlalchemy flask-migrate marshmallow
 
 ### Initialize the database
 
+cd server
 flask db init
 flask db migrate -m "initial migration"
 flask db upgrade head

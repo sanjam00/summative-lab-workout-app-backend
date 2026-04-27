@@ -108,6 +108,7 @@ def delete_exercise(id):
   return make_response({}, 204)
 
 # join table route
+# add an exercise to a workout
 @app.route('/workouts/<int:workout_id>/exercises/<int:exercise_id>/workout_exercises', methods=['POST'])
 def add_workout_exercise(workout_id, exercise_id):
   try:
