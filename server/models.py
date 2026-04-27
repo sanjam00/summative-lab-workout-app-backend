@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import validates
-from marshmallow import Schema, fields
+from sqlalchemy.orm import validates, ValidationError, validates_schema
+from marshmallow import Schema, fields, validates_schema
 db = SQLAlchemy()
 
 # Define models here
@@ -62,7 +62,7 @@ class WorkoutExercises(db.Model):
     if value is not None and value < 0:
       raise ValueError(f"{key} must be non-negative")
 
-    # check presence AFTER assignment logic
+    # check presence after assignment logic
     temp_reps = value if key == 'reps' else self.reps
     temp_sets = value if key == 'sets' else self.sets
     temp_duration = value if key == 'duration_seconds' else self.duration_seconds
@@ -94,6 +94,12 @@ class ExerciseSchema(Schema):
 
   workout_exercises = fields.Nested(lambda: WorkoutExercisesSchema(exclude=("exercise",)), many=True)
 
+  # exercise name must be present and more than 2 characters (contributes to creating a meaningful name)
+  @validates("name")
+  def validate_name(self, value):
+    if not value or len(value.strip()) < 2:
+      raise ValidationError("Exercise name must be at least 2 characters long")
+
 class WorkoutSchema(Schema):
   id = fields.Int(dump_only=True)
   date = fields.Date()
@@ -101,6 +107,13 @@ class WorkoutSchema(Schema):
   notes = fields.Str()
 
   workout_exercises = fields.Nested(lambda: WorkoutExercisesSchema(exclude=("workout",)), many=True)
+
+  # workout duration is present and positive number
+  @validates("duration_minutes")
+  def validate_duration(self, value):
+    if value is not None and value <= 0:
+      raise ValidationError("Workout duration must be greater than 0")
+    return value
 
 class WorkoutExercisesSchema(Schema):
   id = fields.Int(dump_only=True)
@@ -114,3 +127,10 @@ class WorkoutExercisesSchema(Schema):
 
   exercise = fields.Nested(lambda: ExerciseSchema(exclude=("workout_exercises",)))
   workout = fields.Nested(lambda: WorkoutSchema(exclude=("workout_exercises",)))
+
+  @validates_schema
+  def validate_at_least_one_metric(self, data, **kwargs):
+    if not data.get("reps") and not data.get("sets") and not data.get("duration_seconds"):
+      raise ValidationError(
+        "At least one of reps, sets, or duration_seconds must be provided"
+      )
