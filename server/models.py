@@ -1,5 +1,4 @@
 from flask_sqlalchemy import SQLAlchemy
-# from sqlalchemy.orm import validates, ValidationError, validates_schema
 from marshmallow import Schema, fields, validates_schema, validates, ValidationError
 db = SQLAlchemy()
 
