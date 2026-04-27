@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import validates
+from marshmallow import Schema, fields
 db = SQLAlchemy()
 
 # Define models here
@@ -83,3 +84,33 @@ class WorkoutExercises(db.Model):
   
   def __repr__(self):
     return f"<WorkoutExercises {self.id}, {self.reps}, {self.sets}, {self.duration_seconds}>"
+  
+# schemas
+class ExerciseSchema(Schema):
+  id = fields.Int(dump_only=True)
+  name = fields.Str(required=True)
+  category = fields.Str()
+  equipment_needed = fields.Bool()
+
+  workout_exercises = fields.Nested(lambda: WorkoutExercisesSchema(exclude=("exercise",)), many=True)
+
+class WorkoutSchema(Schema):
+  id = fields.Int(dump_only=True)
+  date = fields.Date()
+  durations_minutes = fields.Int()
+  notes = fields.Str()
+
+  workout_exercises = fields.Nested(lambda: WorkoutExercisesSchema(exclude=("workout",)), many=True)
+
+class WorkoutExercisesSchema(Schema):
+  id = fields.Int(dump_only=True)
+  
+  reps = fields.Int()
+  sets = fields.Int()
+  duration_seconds = fields.Int()
+
+  workout_id = fields.Int(load_only=True)
+  exercise_id = fields.Int(load_only=True)
+
+  exercise = fields.Nested(lambda: ExerciseSchema(exclude=("workout_exercises",)))
+  workout = fields.Nested(lambda: WorkoutSchema(exclude=("workout_exercises",)))
